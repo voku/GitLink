@@ -1,8 +1,7 @@
 package uk.co.ben_gibson.git.link.UI.Settings;
 
 import com.intellij.openapi.options.ConfigurationException;
-import com.intellij.ui.EnumComboBoxModel;
-import com.intellij.ui.Gray;
+import com.intellij.ui.*;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -14,6 +13,7 @@ import uk.co.ben_gibson.git.link.Preferences;
 import uk.co.ben_gibson.git.link.Git.RemoteHost;
 import uk.co.ben_gibson.git.link.Url.Modifier.UrlModifier;
 import javax.swing.*;
+import javax.swing.event.HyperlinkListener;
 import java.awt.*;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -23,25 +23,26 @@ import java.util.Map;
 
 public class Settings
 {
+    private HyperlinkListener browserHyperlinkListener = BrowserHyperlinkListener.INSTANCE;
     private JPanel rootPanel;
     private JComboBox hostSelect;
     private JTextField defaultBranchTextField;
-    private JTextField customFileUrlOnBranchTemplateTextField;
-    private JTextField customCommitUrlTemplateTextField;
-    private JPanel customURLPanel;
-    private JLabel customFileUrlOnBranchLabel;
-    private JLabel customCommitUrlLabel;
-    private JLabel projectSettingsLabel;
-    private JLabel customUrlLabel;
-    private JPanel urlModifierCheckBoxPanel;
-    private JLabel featureRequestLabel;
-    private JLabel pluginDetailsLabel;
-    private JFormattedTextField customFileUrlAtCommitTemplateTextField;
-    private JLabel customFileUrlAtCommitLabel;
-    private JTextField remoteNameTextField;
-    private JCheckBox enabledCheckBox;
-    private Preferences preferences;
-    private Map<UrlModifier, JBCheckBox> urlModifierCheckBoxes = new HashMap<>();
+    private JTextField                     customFileUrlOnBranchTemplateTextField;
+    private JTextField                     customCommitUrlTemplateTextField;
+    private JPanel                         customURLPanel;
+    private JLabel                         customFileUrlOnBranchLabel;
+    private JLabel                         customCommitUrlLabel;
+    private JLabel                         projectSettingsLabel;
+    private JLabel                         customUrlLabel;
+    private JPanel                         urlModifierCheckBoxPanel;
+    private com.intellij.ui.HyperlinkLabel featureRequestLabel;
+    private JLabel                         pluginDetailsLabel;
+    private JTextField                     customFileUrlAtCommitTemplateTextField;
+    private JLabel                         customFileUrlAtCommitLabel;
+    private JTextField                     remoteNameTextField;
+    private JCheckBox                      enabledCheckBox;
+    private Preferences                    preferences;
+    private Map<UrlModifier, JBCheckBox>   urlModifierCheckBoxes = new HashMap<>();
 
     public Settings(Preferences preferences, List<UrlModifier> urlModifiers, Plugin plugin)
     {
@@ -72,9 +73,9 @@ public class Settings
         }
 
         this.pluginDetailsLabel.setText(plugin.toString());
-        this.featureRequestLabel.setText(String.format("Submit feature requests and bug reports to %s", plugin.issueTracker()));
+        this.featureRequestLabel.setHtmlText(String.format("Submit feature requests and bug reports to <a href=\"#\">%s</a>", plugin.issueTracker()));
+        this.featureRequestLabel.setHyperlinkTarget(plugin.issueTracker());
         this.applyLabelHelpTextStlye(this.pluginDetailsLabel);
-        this.applyLabelHelpTextStlye(this.featureRequestLabel);
 
     }
 
@@ -109,26 +110,17 @@ public class Settings
 
         if (remoteHost.equals(RemoteHost.CUSTOM)) {
 
-            try {
-                URL url = new URL(this.customFileUrlOnBranchTemplateTextField.getText());
-                this.preferences.customFileUrlOnBranchTemplate = url.toString();
-            } catch (MalformedURLException exception) {
-                throw new ConfigurationException("Invalid URL provided for the custom file on branch URL");
+            if (
+                this.customFileUrlOnBranchTemplateTextField.getText().isEmpty() ||
+                this.customFileUrlAtCommitTemplateTextField.getText().isEmpty() ||
+                this.customCommitUrlTemplateTextField.getText().isEmpty()
+            ) {
+                throw new ConfigurationException("A template must be provided for all URLs.");
             }
 
-            try {
-                URL url = new URL(this.customFileUrlAtCommitTemplateTextField.getText());
-                this.preferences.customFileUrlAtCommitTemplate = url.toString();
-            } catch (MalformedURLException exception) {
-                throw new ConfigurationException("Invalid URL provided for the custom file at commit URL");
-            }
-
-            try {
-                URL url = new URL(this.customCommitUrlTemplateTextField.getText());
-                this.preferences.customCommitUrlTemplate = url.toString();
-            } catch (MalformedURLException exception) {
-                throw new ConfigurationException("Invalid URL provided for the custom commit URL");
-            }
+            this.preferences.customFileUrlOnBranchTemplate = this.customFileUrlOnBranchTemplateTextField.getText();
+            this.preferences.customFileUrlAtCommitTemplate = this.customFileUrlAtCommitTemplateTextField.getText();
+            this.preferences.customCommitUrlTemplate       = this.customCommitUrlTemplateTextField.getText();
         }
 
         if (this.defaultBranchTextField.getText().isEmpty()) {
@@ -264,7 +256,7 @@ public class Settings
         projectSettingsLabel.setVerticalAlignment(0);
         rootPanel.add(projectSettingsLabel, cc.xy(1, 1, CellConstraints.DEFAULT, CellConstraints.CENTER));
         rootPanel.add(urlModifierCheckBoxPanel, cc.xy(1, 11));
-        featureRequestLabel = new JLabel();
+        featureRequestLabel = new HyperlinkLabel();
         featureRequestLabel.setText("Label");
         rootPanel.add(featureRequestLabel, cc.xy(1, 19));
         pluginDetailsLabel = new JLabel();

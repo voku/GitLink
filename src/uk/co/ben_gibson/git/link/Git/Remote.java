@@ -65,6 +65,7 @@ public class Remote
         return this.url;
     }
 
+
     /**
      * Asks the remote repository if it's aware of a given branch.
      */

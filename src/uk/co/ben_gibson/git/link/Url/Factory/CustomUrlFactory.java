@@ -6,33 +6,37 @@ import uk.co.ben_gibson.git.link.Git.*;
 import uk.co.ben_gibson.git.link.Git.Exception.RemoteException;
 import uk.co.ben_gibson.git.link.UI.LineSelection;
 import uk.co.ben_gibson.git.link.Url.Factory.Exception.UrlFactoryException;
-
-import java.net.MalformedURLException;
+import uk.co.ben_gibson.git.link.Url.Substitution.Exception.SubstitutionProcessorException;
+import uk.co.ben_gibson.git.link.Url.Substitution.URLTemplateProcessor;
 import java.net.URL;
 
 public class CustomUrlFactory extends AbstractUrlFactory
 {
-    private String fileOnBranchUrlTemplate;
+    private URLTemplateProcessor urlTemplateProcessor;
+    private String fileAtBranchUrlTemplate;
     private String fileAtCommitUrlTemplate;
     private String commitUrlTemplate;
 
 
-    public CustomUrlFactory(String fileOnBranchUrlTemplate, String fileAtCommitUrlTemplate, String commitUrlTemplate)
-    {
-        this.fileOnBranchUrlTemplate = fileOnBranchUrlTemplate;
+    public CustomUrlFactory(
+        URLTemplateProcessor urlTemplateProcessor,
+        String fileAtBranchUrlTemplate,
+        String fileAtCommitUrlTemplate,
+        String commitUrlTemplate
+    ) {
+        this.urlTemplateProcessor    = urlTemplateProcessor;
+        this.fileAtBranchUrlTemplate = fileAtBranchUrlTemplate;
         this.fileAtCommitUrlTemplate = fileAtCommitUrlTemplate;
-        this.commitUrlTemplate = commitUrlTemplate;
+        this.commitUrlTemplate       = commitUrlTemplate;
     }
 
 
-    public URL createUrlToCommit(@NotNull Remote remote, @NotNull Commit commit) throws UrlFactoryException
+    public URL createUrlToCommit(@NotNull Remote remote, @NotNull Commit commit) throws UrlFactoryException, RemoteException
     {
-        String url = this.commitUrlTemplate.replace("{commit}", commit.hash());
-
         try {
-            return new URL(url);
-        } catch (MalformedURLException e) {
-            throw UrlFactoryException.cannotCreateUrl(String.format("Custom url '%s' is invalid.", url));
+            return this.urlTemplateProcessor.process(this.commitUrlTemplate, remote, commit, null);
+        } catch (SubstitutionProcessorException e) {
+            throw UrlFactoryException.cannotCreateUrl("Blahh");
         }
     }
 
@@ -42,15 +46,12 @@ public class CustomUrlFactory extends AbstractUrlFactory
         @NotNull File file,
         @NotNull Branch branch,
         @Nullable LineSelection lineSelection
-    ) throws UrlFactoryException, RemoteException
-    {
-        String template = this.fileOnBranchUrlTemplate.replace("{branch}", branch.toString());
-
-        template = template.replace("{filePath}", this.cleanPath(file.directoryPath()));
-        template = template.replace("{fileName}", file.name());
-        template = template.replace("{line}", (lineSelection != null) ? Integer.toString(lineSelection.start()) : "");
-
-        return this.createUrlFromTemplate(template);
+    ) throws UrlFactoryException, RemoteException {
+        try {
+            return this.urlTemplateProcessor.process(this.fileAtBranchUrlTemplate, remote, branch, file);
+        } catch (SubstitutionProcessorException e) {
+            throw UrlFactoryException.cannotCreateUrl("Blahh");
+        }
     }
 
 
@@ -59,44 +60,16 @@ public class CustomUrlFactory extends AbstractUrlFactory
         @NotNull File file,
         @NotNull Commit commit,
         @Nullable LineSelection lineSelection
-    ) throws UrlFactoryException, RemoteException
-    {
-        String template = this.fileAtCommitUrlTemplate.replace("{commit}", commit.hash());
-
-        template = template.replace("{filePath}", this.cleanPath(file.directoryPath()));
-        template = template.replace("{fileName}", file.name());
-        template = template.replace("{line}", (lineSelection != null) ? Integer.toString(lineSelection.start()) : "");
-
-        return this.createUrlFromTemplate(template);
-    }
-
-
-    @NotNull
-    private URL createUrlFromTemplate(String template) throws UrlFactoryException
-    {
+    ) throws UrlFactoryException, RemoteException {
         try {
-            URL url = new URL(template);
-
-            String path = url.getPath().replace("//", "/");
-
-            if (url.getQuery() != null && !url.getQuery().isEmpty()) {
-                path = path.concat("?" + url.getQuery());
-            }
-
-            if (url.getRef() != null && !url.getRef().isEmpty()) {
-                path = path.concat("#" + url.getRef());
-            }
-
-            return new URL(url.getProtocol(), url.getHost(), url.getPort(), path);
-
-        } catch (MalformedURLException e) {
-            throw UrlFactoryException.cannotCreateUrl(String.format("Custom url '%s' is invalid.", template));
+            return this.urlTemplateProcessor.process(this.fileAtCommitUrlTemplate, remote, commit, file);
+        } catch (SubstitutionProcessorException e) {
+            throw UrlFactoryException.cannotCreateUrl("Blahh");
         }
     }
 
 
-    public boolean supports(RemoteHost host)
-    {
+    public boolean supports(RemoteHost host) {
         return host.isCustom();
     }
 }

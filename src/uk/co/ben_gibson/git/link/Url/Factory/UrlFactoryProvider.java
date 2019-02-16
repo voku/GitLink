@@ -1,8 +1,10 @@
 package uk.co.ben_gibson.git.link.Url.Factory;
 
+import com.intellij.openapi.components.ServiceManager;
 import uk.co.ben_gibson.git.link.Git.RemoteHost;
 import uk.co.ben_gibson.git.link.Preferences;
 import uk.co.ben_gibson.git.link.Url.Factory.Exception.UrlFactoryException;
+import uk.co.ben_gibson.git.link.Url.Substitution.URLTemplateProcessor;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,6 +27,7 @@ public class UrlFactoryProvider
     public static UrlFactoryProvider fromPreferences(Preferences preferences)
     {
         CustomUrlFactory customUrlFactory = new CustomUrlFactory(
+            ServiceManager.getService(URLTemplateProcessor.class),
             preferences.customFileUrlOnBranchTemplate,
             preferences.customFileUrlAtCommitTemplate,
             preferences.customCommitUrlTemplate
