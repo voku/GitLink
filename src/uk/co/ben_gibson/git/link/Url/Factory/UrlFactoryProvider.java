@@ -26,8 +26,10 @@ public class UrlFactoryProvider
      */
     public static UrlFactoryProvider fromPreferences(Preferences preferences)
     {
+        URLTemplateProcessor urlTemplateProcessor = ServiceManager.getService(URLTemplateProcessor.class);
+
         CustomUrlFactory customUrlFactory = new CustomUrlFactory(
-            ServiceManager.getService(URLTemplateProcessor.class),
+            urlTemplateProcessor,
             preferences.customFileUrlOnBranchTemplate,
             preferences.customFileUrlAtCommitTemplate,
             preferences.customCommitUrlTemplate
@@ -35,12 +37,12 @@ public class UrlFactoryProvider
 
         return new UrlFactoryProvider(
             Arrays.asList(
-                new GitHubUrlFactory(),
-                new GitLabUrlFactory(),
+                new GitHubUrlFactory(urlTemplateProcessor),
+                new GitLabUrlFactory(urlTemplateProcessor),
                 new BitbucketCloudUrlFactory(),
                 new BitbucketServerUrlFactory(),
                 new GitBlitUrlFactory(),
-                new GogsUrlFactory(),
+                new GogsUrlFactory(urlTemplateProcessor),
                 customUrlFactory
             )
         );

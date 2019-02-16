@@ -13,17 +13,13 @@ import uk.co.ben_gibson.git.link.Preferences;
 import uk.co.ben_gibson.git.link.Git.RemoteHost;
 import uk.co.ben_gibson.git.link.Url.Modifier.UrlModifier;
 import javax.swing.*;
-import javax.swing.event.HyperlinkListener;
 import java.awt.*;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Settings
 {
-    private HyperlinkListener browserHyperlinkListener = BrowserHyperlinkListener.INSTANCE;
     private JPanel rootPanel;
     private JComboBox hostSelect;
     private JTextField defaultBranchTextField;
@@ -110,13 +106,25 @@ public class Settings
 
         if (remoteHost.equals(RemoteHost.CUSTOM)) {
 
-            if (
-                this.customFileUrlOnBranchTemplateTextField.getText().isEmpty() ||
-                this.customFileUrlAtCommitTemplateTextField.getText().isEmpty() ||
-                this.customCommitUrlTemplateTextField.getText().isEmpty()
-            ) {
-                throw new ConfigurationException("A template must be provided for all URLs.");
+            if (this.customFileUrlOnBranchTemplateTextField.getText().isEmpty()) {
+                this.applyErrorStyling(this.customFileUrlOnBranchTemplateTextField);
+                throw new ConfigurationException("Invalid URL template provided for file at branch.");
             }
+
+            if (this.customFileUrlAtCommitTemplateTextField.getText().isEmpty()) {
+                this.applyErrorStyling(this.customFileUrlAtCommitTemplateTextField);
+                throw new ConfigurationException("Invalid URL template provided for file at commit.");
+            }
+
+
+            if (this.customCommitUrlTemplateTextField.getText().isEmpty()) {
+                this.applyErrorStyling(this.customCommitUrlTemplateTextField);
+                throw new ConfigurationException("Invalid URL template provided for commit.");
+            }
+
+            this.clearErrorStyling(this.customFileUrlOnBranchTemplateTextField);
+            this.clearErrorStyling(this.customFileUrlAtCommitTemplateTextField);
+            this.clearErrorStyling(this.customCommitUrlTemplateTextField);
 
             this.preferences.customFileUrlOnBranchTemplate = this.customFileUrlOnBranchTemplateTextField.getText();
             this.preferences.customFileUrlAtCommitTemplate = this.customFileUrlAtCommitTemplateTextField.getText();
@@ -154,20 +162,34 @@ public class Settings
         this.customFileUrlOnBranchTemplateTextField.setText(this.preferences.customFileUrlOnBranchTemplate);
         this.customCommitUrlTemplateTextField.setText(this.preferences.customCommitUrlTemplate);
 
+        this.clearErrorStyling(this.customFileUrlOnBranchTemplateTextField);
+        this.clearErrorStyling(this.customFileUrlAtCommitTemplateTextField);
+        this.clearErrorStyling(this.customCommitUrlTemplateTextField);
+
         for (Map.Entry<UrlModifier, JBCheckBox> entry : this.urlModifierCheckBoxes.entrySet()) {
             entry.getValue().setSelected(this.preferences.isModifierEnabled(entry.getKey()));
         }
+    }
+
+    private void clearErrorStyling(JTextField textField)
+    {
+        textField.setBorder(BorderFactory.createEmptyBorder());
+    }
+
+    private void applyErrorStyling(JTextField textField)
+    {
+        textField.setBorder(BorderFactory.createLineBorder(JBColor.RED, 1));
+    }
+
+    private void applyLabelHelpTextStlye(JLabel label)
+    {
+        label.setFont(new Font(null, Font.ITALIC, 11));
     }
 
     private void applyLabelHeadingStlye(JLabel label)
     {
         label.setFont(new Font(null, Font.PLAIN, 12));
         label.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Gray._200));
-    }
-
-    private void applyLabelHelpTextStlye(JLabel label)
-    {
-        label.setFont(new Font(null, Font.ITALIC, 11));
     }
 
     private void createUIComponents()

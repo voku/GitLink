@@ -9,7 +9,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import uk.co.ben_gibson.git.link.Exception.Codes;
 import uk.co.ben_gibson.git.link.Exception.GitLinkException;
 import uk.co.ben_gibson.git.link.Git.Branch;
 import uk.co.ben_gibson.git.link.Git.Commit;
@@ -95,6 +94,7 @@ public class GitLink
             task.queue();
 
         } catch (GitLinkException e) {
+            e.printStackTrace();
             this.exceptionRenderer.render(e);
         }
     }
@@ -151,7 +151,7 @@ public class GitLink
         try {
             BrowserLauncher.getInstance().open(url.toURI().toASCIIString());
         } catch (URISyntaxException e) {
-            throw new GitLinkException(e.getMessage(), Codes.COULD_NOT_OPEN_URL_IN_BROWSER);
+            throw new GitLinkException(e.getMessage());
         }
     }
 }
